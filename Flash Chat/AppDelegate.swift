@@ -13,13 +13,14 @@ import Firebase
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    
+    var myDatabase: DatabaseReference!
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         //TODO: Initialise and Configure your Firebase here:
         FirebaseApp.configure()
-        
+        myDatabase = Database.database().reference()
+        myDatabase.child("test").setValue("We have data!")
         return true
     }
 
