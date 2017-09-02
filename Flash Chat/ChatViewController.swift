@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import Firebase
 
 class ChatViewController: UIViewController {
     
@@ -85,32 +85,27 @@ class ChatViewController: UIViewController {
     
     //MARK: - Send & Recieve from Firebase
     
-    
-    
-    
-    
+
     @IBAction func sendPressed(_ sender: AnyObject) {
-        
-        
         //TODO: Send the message to Firebase and save it in our database
-        
         
     }
     
     //TODO: Create the retrieveMessages method here:
     
     
-
-    
-    
-    
     @IBAction func logOutPressed(_ sender: AnyObject) {
+        do {
+            try Auth.auth().signOut()
+        }
+        catch {
+            print("Error: there was a problem signing out.")
+        }
         
-        //TODO: Log out the user and send them back to WelcomeViewController
-        
-        
+        guard (navigationController?.popToRootViewController(animated: true)) != nil
+            else {
+                print("No view controllers to pop off")
+                return
+        }
     }
-    
-
-
 }
