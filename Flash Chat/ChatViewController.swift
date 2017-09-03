@@ -8,19 +8,18 @@
 
 import UIKit
 import Firebase
+import SVProgressHUD
+import ChameleonFramework
 
 class ChatViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
     
-    // Declare instance variables here
+    var messageArray: [Message] = [Message]()
 
-    // We've pre-linked the IBOutlets
     @IBOutlet var heightConstraint: NSLayoutConstraint!
     @IBOutlet var sendButton: UIButton!
     @IBOutlet var messageTextfield: UITextField!
     @IBOutlet var messageTableView: UITableView!
     
-    let messageArray = ["First Message", "Second Message", "Third Message"]
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -33,6 +32,8 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         messageTableView.register(UINib(nibName: "MessageCell", bundle: nil), forCellReuseIdentifier: "customMessageCell")
         configureTableView()
+        retrieveMessages()
+        messageTableView.separatorStyle = .none
     }
 
     ///////////////////////////////////////////
@@ -45,7 +46,18 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "customMessageCell", for: indexPath) as! CustomMessageCell
-        cell.messageBody.text = messageArray[indexPath.row]
+        cell.messageBody.text = messageArray[indexPath.row].messageBody
+        cell.senderUsername.text = messageArray[indexPath.row].sender
+        cell.avatarImageView.image = UIImage(named: "egg")
+        
+        if cell.senderUsername.text == Auth.auth().currentUser?.email as String! {
+            cell.avatarImageView.backgroundColor = UIColor.flatMint()
+            cell.messageBackground.backgroundColor = UIColor.flatNavyBlue()
+        } else {
+            cell.avatarImageView.backgroundColor = UIColor.flatWatermelon()
+            cell.messageBackground.backgroundColor = UIColor.flatGray()
+        }
+        
         return cell
     }
     
@@ -80,13 +92,44 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     //MARK: - Send & Recieve from Firebase
     
-
     @IBAction func sendPressed(_ sender: AnyObject) {
-        //TODO: Send the message to Firebase and save it in our database
+        messageTextfield.endEditing(true)
+        messageTextfield.isEnabled = false
+        sendButton.isEnabled = false
         
+        let messagesDB = Database.database().reference().child("Messages")
+        let messageDictionary = [
+            "Sender": Auth.auth().currentUser?.email,
+            "MessageBody": messageTextfield.text
+        ]
+        messagesDB.childByAutoId().setValue(messageDictionary) {
+            (error, ref) in
+            if error != nil {
+                print(error as Any)
+            } else {
+                print("Message saved successfully")
+                self.messageTextfield.isEnabled = true
+                self.sendButton.isEnabled = true
+                self.messageTextfield.text = ""
+            }
+        }
     }
     
-    //TODO: Create the retrieveMessages method here:
+    func retrieveMessages() {
+        let messageDB = Database.database().reference().child("Messages")
+        messageDB.observe(.childAdded, with: { (snapshot) in
+            let snapshotValue = snapshot.value as! Dictionary<String, String>
+            
+            let message = Message()
+            message.messageBody = snapshotValue["MessageBody"]!
+            message.sender = snapshotValue["Sender"]!
+            
+            self.messageArray.append(message)
+            self.configureTableView()
+            
+            self.messageTableView.reloadData()
+        })
+    }
     
     
     @IBAction func logOutPressed(_ sender: AnyObject) {
